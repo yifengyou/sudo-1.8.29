@@ -90,7 +90,9 @@ Description  : Sudo (superuser do) allows a system administrator to give certain
 /var/db/sudo/lectured
 ```
 
+![20220630_110302_64](image/20220630_110302_64.png)
 
+* 官网 : <https://www.sudo.ws/>
 
 
 ## 目录
