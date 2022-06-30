@@ -1,0 +1,27 @@
+From 44a602b49365969e56c63c9f12eda197e951302f Mon Sep 17 00:00:00 2001
+From: Tomas Sykora <tosykora@redhat.com>
+Date: Fri, 19 Aug 2016 14:07:35 +0200
+Subject: [PATCH 02/10] Added "Enviroment debugging" message
+
+rebased from:
+Patch2: sudo-1.7.2p1-envdebug.patch
+---
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 9feddfd..39a2d86 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1390,7 +1390,7 @@ AC_ARG_ENABLE(env_debug,
+ [AS_HELP_STRING([--enable-env-debug], [Whether to enable environment debugging.])],
+ [ case "$enableval" in
+     yes)	AC_MSG_RESULT(yes)
+-		AC_DEFINE(ENV_DEBUG)
++		AC_DEFINE(ENV_DEBUG, [], [Environment debugging.])
+ 		;;
+     no)		AC_MSG_RESULT(no)
+ 		;;
+-- 
+2.7.4
+

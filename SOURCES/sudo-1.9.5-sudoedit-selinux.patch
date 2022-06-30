@@ -1,0 +1,11 @@
+diff -up ./src/sudo_edit.c.rest ./src/sudo_edit.c
+--- ./src/sudo_edit.c.rest	2021-11-21 18:41:09.420657680 +0100
++++ ./src/sudo_edit.c	2021-11-21 18:42:23.214272777 +0100
+@@ -878,6 +878,7 @@ selinux_edit_create_tfiles(struct comman
+         }
+         close(tfd);
+     }
++    ret = nfiles;
+ 
+ done:
+     /* Contents of tf will be freed by caller. */

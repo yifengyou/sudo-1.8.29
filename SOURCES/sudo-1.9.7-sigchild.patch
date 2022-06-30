@@ -1,0 +1,35 @@
+From 727056e0c9519d8eecde801e950b35f2f69c72e2 Mon Sep 17 00:00:00 2001
+From: "Todd C. Miller" <Todd.Miller@sudo.ws>
+Date: Fri, 23 Apr 2021 07:41:27 -0600
+Subject: [PATCH] Make sure SIGCHLD is not ignored when sudo is executed. If
+ SIGCHLD is ignored there is a race condition between when the process is
+ executed and when the SIGCHLD handler is installed. This fixes the bug
+ described by GitHub PR #98
+
+---
+ src/signal.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/src/signal.c b/src/signal.c
+index 7f90d707b..866b64790 100644
+--- a/src/signal.c
++++ b/src/signal.c
+@@ -133,6 +133,18 @@ init_signals(void)
+ 	    case SIGTTOU:
+ 		/* Don't install these until exec time. */
+ 		break;
++	    case SIGCHLD:
++		/* Sudo needs to be able to catch SIGCHLD. */
++		if (ss->sa.sa_handler == SIG_IGN) {
++		    sudo_debug_printf(SUDO_DEBUG_INFO,
++			"will restore signal %d on exec", SIGCHLD);
++		    ss->restore = true;
++		}
++		if (sigaction(SIGCHLD, &sa, NULL) != 0) {
++		    sudo_warn(U_("unable to set handler for signal %d"),
++			SIGCHLD);
++		}
++		break;
+ 	    default:
+ 		if (ss->sa.sa_handler != SIG_IGN) {
+ 		    if (sigaction(ss->signo, &sa, NULL) != 0) {

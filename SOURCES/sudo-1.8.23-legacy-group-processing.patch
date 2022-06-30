@@ -1,0 +1,89 @@
+diff -up ./plugins/sudoers/cvtsudoers.c.legacy-processing ./plugins/sudoers/cvtsudoers.c
+--- ./plugins/sudoers/cvtsudoers.c.legacy-processing	2019-10-28 13:28:52.000000000 +0100
++++ ./plugins/sudoers/cvtsudoers.c	2019-10-30 13:32:43.309480623 +0100
+@@ -347,6 +347,15 @@ main(int argc, char *argv[])
+ 	sudo_fatalx("error: unhandled input %d", input_format);
+     }
+ 
++    /*
++     * cvtsudoers group filtering doesn't work if def_match_group_by_gid
++     * is set to true by default (at compile-time). It cannot be set to false
++     * because cvtsudoers doesn't apply the parsed Defaults.
++     *
++     * Related: sudo-1.8.23-legacy-group-processing.patch
++     */
++    def_match_group_by_gid = def_legacy_group_processing = false;
++
+     /* Apply filters. */
+     filter_userspecs(&parsed_policy, conf);
+     filter_defaults(&parsed_policy, conf);
+diff -up ./plugins/sudoers/defaults.c.legacy-processing ./plugins/sudoers/defaults.c
+--- ./plugins/sudoers/defaults.c.legacy-processing	2019-10-28 13:28:52.000000000 +0100
++++ ./plugins/sudoers/defaults.c	2019-10-30 13:32:43.309480623 +0100
+@@ -93,6 +93,7 @@ static struct early_default early_defaul
+     { I_FQDN },
+ #endif
+     { I_MATCH_GROUP_BY_GID },
++    { I_LEGACY_GROUP_PROCESSING },
+     { I_GROUP_PLUGIN },
+     { I_RUNAS_DEFAULT },
+     { I_SUDOERS_LOCALE },
+@@ -494,6 +495,8 @@ init_defaults(void)
+     }
+ 
+     /* First initialize the flags. */
++    def_legacy_group_processing = true;
++    def_match_group_by_gid = true;
+ #ifdef LONG_OTP_PROMPT
+     def_long_otp_prompt = true;
+ #endif
+diff -up ./plugins/sudoers/def_data.c.legacy-processing ./plugins/sudoers/def_data.c
+--- ./plugins/sudoers/def_data.c.legacy-processing	2019-10-30 13:32:43.309480623 +0100
++++ ./plugins/sudoers/def_data.c	2019-10-30 13:37:25.914602825 +0100
+@@ -506,6 +506,10 @@ struct sudo_defs_types sudo_defs_table[]
+ 	N_("Log when a command is denied by sudoers"),
+ 	NULL,
+     }, {
++	"legacy_group_processing", T_FLAG,
++	N_("Don't pre-resolve all group names"),
++	NULL,
++    }, {
+ 	NULL, 0, NULL
+     }
+ };
+diff -up ./plugins/sudoers/def_data.h.legacy-processing ./plugins/sudoers/def_data.h
+--- ./plugins/sudoers/def_data.h.legacy-processing	2019-10-30 13:32:43.310480638 +0100
++++ ./plugins/sudoers/def_data.h	2019-10-30 13:40:59.651713757 +0100
+@@ -232,6 +232,8 @@
+ #define def_log_allowed         (sudo_defs_table[I_LOG_ALLOWED].sd_un.flag)
+ #define I_LOG_DENIED            116
+ #define def_log_denied          (sudo_defs_table[I_LOG_DENIED].sd_un.flag)
++#define I_LEGACY_GROUP_PROCESSING 117
++#define def_legacy_group_processing (sudo_defs_table[I_LEGACY_GROUP_PROCESSING].sd_un.flag)
+ 
+ enum def_tuple {
+ 	never,
+diff -up ./plugins/sudoers/def_data.in.legacy-processing ./plugins/sudoers/def_data.in
+--- ./plugins/sudoers/def_data.in.legacy-processing	2019-10-30 13:32:43.310480638 +0100
++++ ./plugins/sudoers/def_data.in	2019-10-30 13:42:20.915896239 +0100
+@@ -366,3 +366,6 @@ log_allowed
+ log_denied
+ 	T_FLAG
+ 	"Log when a command is denied by sudoers"
++legacy_group_processing
++	T_FLAG
++	"Don't pre-resolve all group names"
+diff -up ./plugins/sudoers/sudoers.c.legacy-processing ./plugins/sudoers/sudoers.c
+--- ./plugins/sudoers/sudoers.c.legacy-processing	2019-10-28 13:28:53.000000000 +0100
++++ ./plugins/sudoers/sudoers.c	2019-10-30 13:32:43.310480638 +0100
+@@ -221,6 +221,10 @@ sudoers_policy_init(void *info, char * c
+     if (set_loginclass(runas_pw ? runas_pw : sudo_user.pw))
+ 	ret = true;
+ 
++    if (!def_match_group_by_gid || !def_legacy_group_processing) {
++        def_match_group_by_gid = false;
++	def_legacy_group_processing = false;
++    }
+ cleanup:
+     if (!restore_perms())
+ 	ret = -1;

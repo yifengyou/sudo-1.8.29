@@ -1,0 +1,60 @@
+diff -up ./plugins/sudoers/def_data.c.nowait ./plugins/sudoers/def_data.c
+--- ./plugins/sudoers/def_data.c.nowait	2019-10-30 13:43:48.376168944 +0100
++++ ./plugins/sudoers/def_data.c	2019-10-30 13:43:48.378168973 +0100
+@@ -510,6 +510,10 @@ struct sudo_defs_types sudo_defs_table[]
+ 	N_("Don't pre-resolve all group names"),
+ 	NULL,
+     }, {
++	"cmnd_no_wait", T_FLAG,
++	N_("Don't fork and wait for the command to finish, just exec it"),
++	NULL,
++    }, {
+ 	NULL, 0, NULL
+     }
+ };
+diff -up ./plugins/sudoers/def_data.h.nowait ./plugins/sudoers/def_data.h
+--- ./plugins/sudoers/def_data.h.nowait	2019-10-30 13:43:48.378168973 +0100
++++ ./plugins/sudoers/def_data.h	2019-10-30 13:45:38.425770365 +0100
+@@ -234,6 +234,8 @@
+ #define def_log_denied          (sudo_defs_table[I_LOG_DENIED].sd_un.flag)
+ #define I_LEGACY_GROUP_PROCESSING 117
+ #define def_legacy_group_processing (sudo_defs_table[I_LEGACY_GROUP_PROCESSING].sd_un.flag)
++#define I_CMND_NO_WAIT          118
++#define def_cmnd_no_wait        (sudo_defs_table[I_CMND_NO_WAIT].sd_un.flag)
+ 
+ enum def_tuple {
+ 	never,
+diff -up ./plugins/sudoers/def_data.in.nowait ./plugins/sudoers/def_data.in
+--- ./plugins/sudoers/def_data.in.nowait	2019-10-30 13:43:48.376168944 +0100
++++ ./plugins/sudoers/def_data.in	2019-10-30 13:43:48.379168987 +0100
+@@ -369,3 +369,6 @@ log_denied
+ legacy_group_processing
+ 	T_FLAG
+ 	"Don't pre-resolve all group names"
++cmnd_no_wait
++	T_FLAG
++	"Don't fork and wait for the command to finish, just exec it"
+diff -up ./plugins/sudoers/sudoers.c.nowait ./plugins/sudoers/sudoers.c
+--- ./plugins/sudoers/sudoers.c.nowait	2019-10-30 13:43:48.376168944 +0100
++++ ./plugins/sudoers/sudoers.c	2019-10-30 13:43:48.379168987 +0100
+@@ -225,6 +225,20 @@ sudoers_policy_init(void *info, char * c
+         def_match_group_by_gid = false;
+ 	def_legacy_group_processing = false;
+     }
++
++    /*
++     * Emulate cmnd_no_wait option by disabling PAM session, PTY allocation
++     * and I/O logging. This will cause sudo to execute the given command
++     * directly instead of forking a separate process for it.
++     */
++    if (def_cmnd_no_wait) {
++        def_pam_setcred = false;
++        def_pam_session = false;
++        def_use_pty = false;
++        def_log_input = false;
++        def_log_output = false;
++    }
++
+ cleanup:
+     if (!restore_perms())
+ 	ret = -1;

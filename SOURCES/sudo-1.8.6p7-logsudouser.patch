@@ -1,0 +1,90 @@
+From 06b46ae226fecd4188af372ac0ccd7aa582e21c8 Mon Sep 17 00:00:00 2001
+From: Tomas Sykora <tosykora@redhat.com>
+Date: Wed, 17 Aug 2016 10:12:11 +0200
+Subject: [PATCH] Sudo logs username root instead of realuser
+
+RHEL7 sudo logs username root instead of realuser in /var/log/secure
+
+Rebased from:
+Patch50: sudo-1.8.6p7-logsudouser.patch
+
+Resolves:
+rhbz#1312486
+---
+ plugins/sudoers/logging.c | 14 +++++++-------
+ plugins/sudoers/sudoers.h |  1 +
+ 2 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/plugins/sudoers/logging.c b/plugins/sudoers/logging.c
+index 45cae67..74b2220 100644
+--- a/plugins/sudoers/logging.c
++++ b/plugins/sudoers/logging.c
+@@ -104,7 +104,7 @@ do_syslog(int pri, char *msg)
+      * Log the full line, breaking into multiple syslog(3) calls if necessary
+      */
+     fmt = _("%8s : %s");
+-    maxlen = def_syslog_maxlen - (strlen(fmt) - 5 + strlen(user_name));
++    maxlen = def_syslog_maxlen - (strlen(fmt) - 5 + strlen(sudo_user_name));
+     for (p = msg; *p != '\0'; ) {
+ 	len = strlen(p);
+ 	if (len > maxlen) {
+@@ -120,7 +120,7 @@ do_syslog(int pri, char *msg)
+ 	    save = *tmp;
+ 	    *tmp = '\0';
+ 
+-	    mysyslog(pri, fmt, user_name, p);
++	    mysyslog(pri, fmt, sudo_user_name, p);
+ 
+ 	    *tmp = save;			/* restore saved character */
+ 
+@@ -128,11 +128,11 @@ do_syslog(int pri, char *msg)
+ 	    for (p = tmp; *p == ' '; p++)
+ 		continue;
+ 	} else {
+-	    mysyslog(pri, fmt, user_name, p);
++	    mysyslog(pri, fmt, sudo_user_name, p);
+ 	    p += len;
+ 	}
+ 	fmt = _("%8s : (command continued) %s");
+-	maxlen = def_syslog_maxlen - (strlen(fmt) - 5 + strlen(user_name));
++	maxlen = def_syslog_maxlen - (strlen(fmt) - 5 + strlen(sudo_user_name));
+     }
+ 
+     sudoers_setlocale(oldlocale, NULL);
+@@ -179,10 +179,10 @@ do_logfile(const char *msg)
+ 	timestr = "invalid date";
+     if (def_log_host) {
+ 	len = asprintf(&full_line, "%s : %s : HOST=%s : %s",
+-	    timestr, user_name, user_srunhost, msg);
++	    timestr, sudo_user_name, user_srunhost, msg);
+     } else {
+ 	len = asprintf(&full_line, "%s : %s : %s",
+-	    timestr, user_name, msg);
++	    timestr, sudo_user_name, msg);
+     }
+     if (len == -1) {
+ 	sudo_warnx(U_("%s: %s"), __func__, U_("unable to allocate memory"));
+@@ -746,7 +746,7 @@ send_mail(const char *fmt, ...)
+ 
+     if ((timestr = get_timestr(time(NULL), def_log_year)) == NULL)
+ 	timestr = "invalid date";
+-    (void) fprintf(mail, "\n\n%s : %s : %s : ", user_host, timestr, user_name);
++    (void) fprintf(mail, "\n\n%s : %s : %s : ", user_host, timestr, sudo_user_name);
+     va_start(ap, fmt);
+     (void) vfprintf(mail, fmt, ap);
+     va_end(ap);
+diff --git a/plugins/sudoers/sudoers.h b/plugins/sudoers/sudoers.h
+index cfd5abb..c69a043 100644
+--- a/plugins/sudoers/sudoers.h
++++ b/plugins/sudoers/sudoers.h
+@@ -180,6 +180,7 @@ struct sudo_user {
+ /*
+  * Shortcuts for sudo_user contents.
+  */
++#define sudo_user_name		(sudo_user.pw->pw_name)
+ #define user_name		(sudo_user.name)
+ #define user_uid		(sudo_user.uid)
+ #define user_gid		(sudo_user.gid)
+-- 
+2.7.4
+

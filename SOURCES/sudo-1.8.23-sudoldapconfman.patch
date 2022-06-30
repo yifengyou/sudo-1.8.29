@@ -1,0 +1,32 @@
+diff -up sudo-1.8.23/doc/Makefile.in.sudoldapconfman sudo-1.8.23/doc/Makefile.in
+--- sudo-1.8.23/doc/Makefile.in.sudoldapconfman	2018-04-29 21:59:31.000000000 +0200
++++ sudo-1.8.23/doc/Makefile.in	2018-05-17 13:56:24.693651178 +0200
+@@ -345,10 +345,16 @@ install-doc: install-dirs
+ 	    rm -f $(DESTDIR)$(mandirsu)/sudoedit.$(mansectsu)$(MANCOMPRESSEXT); \
+ 	    echo ln -s sudo.$(mansectsu)$(MANCOMPRESSEXT) $(DESTDIR)$(mandirsu)/sudoedit.$(mansectsu)$(MANCOMPRESSEXT); \
+ 	    ln -s sudo.$(mansectsu)$(MANCOMPRESSEXT) $(DESTDIR)$(mandirsu)/sudoedit.$(mansectsu)$(MANCOMPRESSEXT); \
++	    rm -f $(DESTDIR)$(mandirform)/sudo-ldap.conf.$(mansectform)$(MANCOMPRESSEXT); \
++           echo ln -s sudoers.ldap.$(mansectform)$(MANCOMPRESSEXT) $(DESTDIR)$(mandirform)/sudo-ldap.conf.$(mansectform)$(MANCOMPRESSEXT); \
++           ln -s sudoers.ldap.$(mansectform)$(MANCOMPRESSEXT) $(DESTDIR)$(mandirform)/sudo-ldap.conf.$(mansectform)$(MANCOMPRESSEXT); \
+ 	else \
+ 	    rm -f $(DESTDIR)$(mandirsu)/sudoedit.$(mansectsu); \
+ 	    echo ln -s sudo.$(mansectsu) $(DESTDIR)$(mandirsu)/sudoedit.$(mansectsu); \
+ 	    ln -s sudo.$(mansectsu) $(DESTDIR)$(mandirsu)/sudoedit.$(mansectsu); \
++	    rm -f $(DESTDIR)$(mandirform)/sudo-ldap.conf.$(mansectform); \
++           echo ln -s sudoers.ldap.$(mansectform) $(DESTDIR)$(mandirform)/sudo-ldap.conf.$(mansectform); \
++           ln -s sudoers.ldap.$(mansectform) $(DESTDIR)$(mandirform)/sudo-ldap.conf.$(mansectform); \
+ 	fi
+ 
+ install-plugin:
+@@ -363,8 +369,9 @@ uninstall:
+ 		$(DESTDIR)$(mandirsu)/visudo.$(mansectsu) \
+ 		$(DESTDIR)$(mandirform)/sudo.conf.$(mansectform) \
+ 		$(DESTDIR)$(mandirform)/sudoers.$(mansectform) \
+-		$(DESTDIR)$(mandirform)/sudoers_timestamp.$(mansectform)
+-		$(DESTDIR)$(mandirform)/sudoers.ldap.$(mansectform)
++		$(DESTDIR)$(mandirform)/sudoers_timestamp.$(mansectform) \
++		$(DESTDIR)$(mandirform)/sudoers.ldap.$(mansectform) \
++		$(DESTDIR)$(mandirform)/sudo-ldap.conf.$(mansectform)
+ 
+ splint:
+ 
